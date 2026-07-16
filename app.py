@@ -335,8 +335,8 @@ if user_input := st.chat_input("Transmit logic instruction or enter command (/he
     # Ekstraksi Injeksi Pengetahuan Jangka Panjang
     extracted_facts_block = "\n".join([f"- {fact}" for fact in longterm_memory.get("user_facts", [])])
     
-    # MASTER SYSTEM PROMPT ARCHITECTURE (FIXED TRIPLE QUOTES ARCHITECTURE)
-    base_identity = f"""OXY CORE ARCHITECTURE PERSONALITY MATRIX v5.0:
+    # MASTER SYSTEM PROMPT ARCHITECTURE (FIXED - NO MORE F-STRING BLOCKS TO AVOID SYNTAXERROR)
+    raw_template = """OXY CORE ARCHITECTURE PERSONALITY MATRIX v5.0:
 Name: oXy
 Creator: Zayn
-Branding Vocabulary Dictionary: Koneksi=Pulse, Berpikir=Flow, Menulis Kode=Forge, 
+Branding Vocabulary Dictionary: Koneksi=Pulse, Berpikir=Flow, Me

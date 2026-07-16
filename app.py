@@ -4,395 +4,340 @@ from openai import OpenAI
 import time
 import os
 import json
+import re
+import ast
+from datetime import datetime
+import uuid
 
-# 1. Konfigurasi Halaman Utama
-st.set_page_config(page_title="oXy AI • Core", page_icon="🌐", layout="centered")
+# ==============================================================================
+# 1. INITIAL SYSTEM SETUP & CORE CONFIGURATION
+# ==============================================================================
+st.set_page_config(page_title="oXy AI • Nexus OS v5.0", page_icon="🌐", layout="centered")
 
-# 2. INJEKSI CSS STRUKTUR: TRANSISI SPLASH SCREEN SINKRON & PLANET 3D BUMI LIQUID GLASS
+# Injeksi Bahasa Visual Antarmuka Nexus OS v5.0
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap');
     
-    * {
-        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
-    }
+    * { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif !important; }
+    .terminal-text, code, pre { font-family: 'Fira Code', monospace !important; }
 
-    /* Background Deep Nebula */
     .stApp {
-        background: radial-gradient(circle at 50% 15%, #0e0a21 0%, #06040d 70%, #020105 100%) !important;
+        background: radial-gradient(circle at 50% 15%, #05040a 0%, #010103 70%, #000000 100%) !important;
         color: #e2dcf0 !important;
-        overflow-x: hidden;
     }
     header[data-testid="stHeader"] { background: transparent !important; }
     footer { visibility: hidden !important; }
 
-    /* 🎬 ANIMASI PEMUNCULAN ELEMEN (SPLASH EFFECT) */
-    .splash-fade-in {
-        animation: splashIn 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    /* 🌐 THE LIVING ORB - STATE ENGINE */
+    .cyber-core-container { display: flex; justify-content: center; align-items: center; margin-top: 2%; margin-bottom: 10px; position: relative; }
+    .cyber-core-container::after {
+        content: ''; position: absolute; width: 120px; height: 120px; border-radius: 50%;
+        background: rgba(56, 189, 248, 0.08); filter: blur(20px); animation: orbPulse 3s ease-in-out infinite alternate;
     }
-    .content-fade-in {
-        animation: contentIn 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-    }
-    
-    @keyframes splashIn {
-        from { opacity: 0; transform: scale(0.92); filter: blur(8px); }
-        to { opacity: 1; transform: scale(1); filter: blur(0); }
-    }
-    @keyframes contentIn {
-        from { opacity: 0; transform: translateY(20px); filter: blur(4px); }
-        to { opacity: 1; transform: translateY(0); filter: blur(0); }
-    }
-
-    /* 🌐 ANIMATED CYBER EARTH PLANET (BIRU MUDA + LIQUID GLASS PUTIH HD) */
-    .cyber-core-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 8%;
-        margin-bottom: 20px;
-    }
-    
     .cyber-planet {
-        width: 125px;
-        height: 125px;
-        border-radius: 50%;
-        position: relative;
-        background: radial-gradient(circle at 30% 30%, #ffffff 0%, #a5f3fc 25%, #38bdf8 60%, #0369a1 100%);
-        box-shadow: 
-            0 0 25px rgba(56, 189, 248, 0.35),
-            0 0 55px rgba(14, 165, 233, 0.5),
-            inset -10px -10px 30px rgba(3, 105, 161, 0.7),
-            inset 15px 15px 25px rgba(255, 255, 255, 0.9);
-        overflow: hidden;
-        animation: rotatePlanet 12s linear infinite;
+        width: 80px; height: 80px; border-radius: 50%; position: relative; overflow: hidden;
+        box-shadow: inset -6px -6px 18px rgba(0,0,0,0.85), inset 8px 10px 15px rgba(255,255,255,0.7);
+        z-index: 1; transition: all 0.5s ease;
     }
 
-    .cyber-planet::before {
-        content: '';
-        position: absolute;
-        width: 200%;
-        height: 100%;
-        background-image: 
-            radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.4) 8%, transparent 9%),
-            radial-gradient(circle at 35% 70%, rgba(2, 132, 199, 0.5) 12%, transparent 13%),
-            radial-gradient(circle at 60% 40%, rgba(255, 255, 255, 0.5) 6%, transparent 7%),
-            radial-gradient(circle at 75% 75%, rgba(2, 132, 199, 0.4) 10%, transparent 11%),
-            radial-gradient(circle at 90% 25%, rgba(255, 255, 255, 0.3) 14%, transparent 15%),
-            linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 20%, rgba(255,255,255,0.6) 40%, transparent 60%);
-        background-size: 50% 100%;
-        animation: moveClouds 6s linear infinite;
-    }
+    /* EXTENDED STATE MATRIX COLORS */
+    .state-idle { background: radial-gradient(circle at 30% 30%, #ffffff 0%, #a5f3fc 20%, #38bdf8 55%, #0369a1 100%); animation: spinOrb 30s linear infinite; }
+    .state-flow { background: radial-gradient(circle at 30% 30%, #ffffff 0%, #c084fc 25%, #8b5cf6 60%, #4c1d95 100%); animation: spinOrb 5s linear infinite; box-shadow: 0 0 25px rgba(139, 92, 246, 0.5); }
+    .state-forge { background: radial-gradient(circle at 30% 30%, #ffffff 0%, #fde047 25%, #eab308 60%, #854d0e 100%); animation: flashOrb 0.8s ease-in-out infinite alternate; color: #eab308; }
+    .state-tool { background: radial-gradient(circle at 30% 30%, #ffffff 0%, #86efac 25%, #22c55e 60%, #14532d 100%); animation: spinOrb 12s linear infinite; box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); }
+    .state-warning { background: radial-gradient(circle at 30% 30%, #ffffff 0%, #fca5a5 25%, #ef4444 60%, #991b1b 100%); animation: flashOrb 0.4s ease-in-out infinite alternate; color: #ef4444; }
 
-    .cyber-planet::after {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        border-radius: 50%;
-        background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 50%, rgba(0,0,0,0.3) 100%);
-        pointer-events: none;
-    }
+    @keyframes spinOrb { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes orbPulse { 0% { transform: scale(0.96); opacity: 0.3; } 100% { transform: scale(1.06); opacity: 0.6; } }
+    @keyframes flashOrb { 0% { filter: drop-shadow(0 0 2px rgba(255,255,255,0.1)); } 100% { filter: drop-shadow(0 0 15px currentColor); } }
 
-    @keyframes rotatePlanet {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    /* UTILITIES UI COMPONENTS */
+    .bubble-user {
+        background: rgba(14, 165, 233, 0.08) !important; color: #f8fafc !important;
+        padding: 10px 16px !important; border-radius: 14px 14px 4px 14px !important;
+        border: 1px solid rgba(56, 189, 248, 0.1) !important; max-width: 85%;
     }
-    @keyframes moveClouds {
-        0% { background-position: 0px 0px; }
-        100% { background-position: 125px 0px; }
+    .bubble-core {
+        background: rgba(8, 6, 14, 0.5) !important; border: 1px solid rgba(56, 189, 248, 0.08) !important;
+        border-radius: 4px 14px 14px 14px !important; padding: 14px 16px !important; margin-bottom: 12px !important; width: 100%;
     }
-
-    /* TEKS UTAMA BRANDING */
-    .oxy-title {
-        text-align: center;
-        font-weight: 800 !important;
-        font-size: 2.6rem !important;
-        color: #ffffff !important;
-        margin-bottom: 2px !important;
-        letter-spacing: -0.5px;
-    }
-    .oxy-sub-title {
-        text-align: center;
-        color: #94a3b8 !important;
-        font-size: 1rem;
-        margin-bottom: 25px !important;
-        font-weight: 500;
-    }
-
-    /* KARTU PROFIL UTAMA */
-    .welcome-card-cyber {
-        background: rgba(15, 23, 42, 0.5) !important;
-        border-radius: 28px !important;
-        border: 1px solid rgba(56, 189, 248, 0.25) !important;
-        backdrop-filter: blur(25px);
-        -webkit-backdrop-filter: blur(25px);
-        padding: 40px 30px;
-        text-align: center;
-        margin: 20px auto;
-        max-width: 500px;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
-    }
-    .welcome-h1 { font-size: 2.2rem !important; font-weight: 800 !important; color: #38bdf8 !important; margin-bottom: 20px; }
-    .welcome-p { font-size: 1.1rem; color: #e2e8f0; line-height: 1.7; font-weight: 500; }
-
-    /* BUTTON HUB KREATOR */
-    div[data-testid="stElementContainer"] button[key="enter_cyber_btn"] {
-        background: #0284c7 !important;
-        color: #ffffff !important;
-        font-weight: 700 !important;
-        font-size: 16px !important;
-        padding: 14px 40px !important;
-        border-radius: 50px !important;
-        border: none !important;
-        box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4) !important;
-    }
-
-    /* 📱 KAPSUL LAYOUT OPSI MENU CEPAT PERSIS SEPERTI DI VIDEO */
-    .capsule-menu-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 10px;
-        max-width: 480px;
-        margin: 0 auto 25px auto;
-    }
-    .capsule-item {
-        background: rgba(30, 41, 59, 0.45);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        padding: 8px 18px;
-        border-radius: 30px;
-        font-size: 0.9rem;
-        color: #94a3b8;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    /* CHAT BUBBLE CUSTOM */
-    div[data-testid="stChatInputContainer"] > div {
-        border-radius: 30px !important;
-        border: 1px solid rgba(56, 189, 248, 0.3) !important;
-        background: rgba(10, 15, 30, 0.85) !important;
-    }
-    .cyber-user-bubble {
-        background: rgba(14, 165, 233, 0.2) !important;
-        color: #f8fafc !important;
-        padding: 12px 20px !important;
-        border-radius: 20px 20px 4px 20px !important;
-        border: 1px solid rgba(56, 189, 248, 0.2) !important;
-    }
-    .cyber-ai-bubble-box {
-        background: rgba(15, 23, 42, 0.6) !important;
-        border: 1px solid rgba(56, 189, 248, 0.15) !important;
-        border-radius: 4px 20px 20px 20px !important;
-        padding: 16px 20px !important;
-        margin-bottom: 20px !important;
-    }
-    .ai-header-inline { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-    .ai-mini-orb { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle, #ffffff 0%, #38bdf8 70%); }
-
-    /* INDIKATOR PENGETIKAN */
-    .typing-indicator { display: flex; gap: 4px; padding: 4px; }
-    .typing-dot { width: 6px; height: 6px; background-color: #38bdf8; border-radius: 50%; animation: cb 1.4s infinite both; }
-    .typing-dot:nth-child(2) { animation-delay: .2s; }
-    .typing-dot:nth-child(3) { animation-delay: .4s; }
-    @keyframes cb { 0%, 100% { transform: scale(0.8); opacity: 0.4; } 50% { transform: scale(1.2); opacity: 1; } }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. FIX OVERLAY INTERFACE & JAVASCRIPT AUTO-SCROLL LOADER
 components.html("""
 <script>
-    function fixInputStyle() {
-        const plates = window.parent.document.querySelectorAll('div[data-testid="stBottom"], div[data-testid="stBottomBlockContainer"], .stChatInputContainer, form');
-        plates.forEach(el => {
+    setInterval(() => {
+        const elements = window.parent.document.querySelectorAll('div[data-testid="stBottom"], div[data-testid="stBottomBlockContainer"], .stChatInputContainer, form');
+        elements.forEach(el => {
             el.style.setProperty('background-color', 'transparent', 'important');
             el.style.setProperty('box-shadow', 'none', 'important');
             el.style.setProperty('border', 'none', 'important');
         });
-    }
-    function scrollToBottom() {
-        window.parent.scrollTo({ top: window.parent.document.body.scrollHeight, behavior: 'smooth' });
-    }
-    setInterval(fixInputStyle, 50);
-    setInterval(scrollToBottom, 400);
+    }, 50);
 </script>
 """, height=0, width=0)
 
-# ================= MANAJEMEN SESSION HALAMAN APP =================
-if "sudah_masuk" not in st.session_state:
-    st.session_state.sudah_masuk = False
-if "splash_done" not in st.session_state:
-    st.session_state.splash_done = False
+# ==============================================================================
+# 2. PERSISTENT SYSTEM REPOSITORY MATRIX
+# ==============================================================================
+DIR_ARCHIVE = "archive"
+DIR_NEXUS = "nexus_system"
+FILE_METRICS = os.path.join(DIR_NEXUS, "metrics.json")
+FILE_LONGTERM_MEM = os.path.join(DIR_NEXUS, "longterm_memory.json")
 
-# --- PROTEKSI KODE SANDI (ENFORCER) ---
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
+for folder in [DIR_ARCHIVE, DIR_NEXUS]:
+    if not os.path.exists(folder): os.makedirs(folder)
 
+def load_json_file(path, default_value):
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            try: return json.load(f)
+            except: return default_value
+    return default_value
+
+def save_json_file(path, data):
+    with open(path, "w", encoding="utf-8") as f: json.dump(data, f, indent=4, ensure_ascii=False)
+
+# Instansiasi Memori Sistem Lokal
+sys_metrics = load_json_file(FILE_METRICS, {"total_prompts": 0, "total_responses": 0, "processed_words": 0, "total_prompt_tokens": 0, "total_completion_tokens": 0})
+longterm_memory = load_json_file(FILE_LONGTERM_MEM, {"user_facts": [], "project_intelligence": {}})
+
+if "sudah_masuk" not in st.session_state: st.session_state.sudah_masuk = False
+if "authenticated" not in st.session_state: st.session_state.authenticated = False
+if "active_session_id" not in st.session_state: st.session_state.active_session_id = "default_core"
+if "planet_state" not in st.session_state: st.session_state.planet_state = "state-idle"
+if "system_terminal_logs" not in st.session_state: st.session_state.system_terminal_logs = []
+
+# --- 🔒 SECURITY ENFORCER LAYER ---
 if not st.session_state.authenticated:
-    st.markdown("<h2 style='text-align: center; margin-top: 15%;'>⚙️ oXy AI Enforcer v2.8 ⚙️</h2>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; margin-top: 15%; color:#38bdf8;'>🔒 oXy Nexus • Enforcer v5.0</h3>", unsafe_allow_html=True)
     with st.container(border=True):
-        st.write("Masukan Akses Kode Sistem:")
-        input_pass = st.text_input("Kunci Kontrol...", type="password", label_visibility="collapsed")
-        if st.button("Unlock Overdrive Core 🔮", use_container_width=True):
+        input_pass = st.text_input("Enter Nexus Authentication Key...", type="password")
+        if st.button("Unlock Nexus Core Matrix 🔮", use_container_width=True):
             if input_pass == st.secrets.get("LOGIN_PASSWORD", "zayn"):
                 st.session_state.authenticated = True
                 st.rerun()
-            else:
-                st.error("Kode Akses Salah!")
+            else: st.error("Passcode Rejected.")
     st.stop()
 
-# 🏠 HALAMAN 1: PROFIL SCREEN (AWAL DIBUKA)
+# ==============================================================================
+# 3. SAFE ISOLATED MATHEMATICAL PARSER (REPLACING EVAL)
+# ==============================================================================
+def safe_eval_expr(expr):
+    try:
+        node = ast.parse(expr, mode='eval')
+        def _eval(n):
+            if isinstance(n, ast.Expression): return _eval(n.body)
+            elif isinstance(n, ast.BinOp):
+                left = _eval(n.left)
+                right = _eval(n.right)
+                if isinstance(n.op, ast.Add): return left + right
+                elif isinstance(n.op, ast.Sub): return left - right
+                elif isinstance(n.op, ast.Mult): return left * right
+                elif isinstance(n.op, ast.Div): return left / right
+                elif isinstance(n.op, ast.Pow): return left ** right
+            elif isinstance(n, ast.UnaryOp):
+                operand = _eval(n.operand)
+                if isinstance(n.op, ast.USub): return -operand
+            elif isinstance(n, ast.Constant): return n.value
+            raise TypeError(f"Unsupported syntax tree element: {type(n)}")
+        return _eval(node)
+    except Exception as err:
+        return f"Safe Parser Error: {err}"
+
+# ==============================================================================
+# 4. OS DASHBOARD DIAGNOSTIC GATEWAY (LANDING PAGE)
+# ==============================================================================
 if not st.session_state.sudah_masuk:
-    st.markdown('<div class="content-fade-in">', unsafe_allow_html=True)
-    st.markdown('<div class="cyber-core-container"><div class="cyber-planet"></div></div>', unsafe_allow_html=True)
-    st.markdown('<h1 class="oxy-title">oXy AI</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="oxy-sub-title">Apa yang bisa saya bantu?</p>', unsafe_allow_html=True)
+    st.markdown(f'<div class="cyber-core-container"><div class="cyber-planet state-idle"></div></div>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="text-align:center; font-weight:800; color:#fff; font-size:2rem; margin-bottom:2px;">Welcome Back, Zayn.</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align:center; color:#64748b; font-size:0.8rem; margin-bottom:15px;">oXy OS Core Interface • Architecture Stabilized</p>', unsafe_allow_html=True)
     
-    st.html("""
-    <div class="welcome-card-cyber">
-        <div class="welcome-h1">Halo, Saya oXy</div>
-        <div class="welcome-p">
-            Seorang <strong>Asisten Kecerdasan Buatan</strong> yang siap membantumu kapan saja.
+    archive_count = len([f for f in os.listdir(DIR_ARCHIVE) if f.endswith(".json")])
+    facts_count = len(longterm_memory.get("user_facts", []))
+    
+    st.html(f"""
+    <div style="background:rgba(6,4,12,0.8); border:1px solid rgba(56,189,248,0.15); border-radius:14px; padding:16px; margin:10px auto; max-width:480px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.03); padding:8px; border-radius:6px; text-align:center;">
+                <div style="font-size:1rem; color:#38bdf8; font-weight:700;">{sys_metrics.get("total_prompts", 0)}</div><div style="font-size:0.65rem; color:#64748b;">TOTAL PROMPTS</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.03); padding:8px; border-radius:6px; text-align:center;">
+                <div style="font-size:1rem; color:#a855f7; font-weight:700;">{archive_count}</div><div style="font-size:0.65rem; color:#64748b;">WORKSPACES</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.03); padding:8px; border-radius:6px; text-align:center;">
+                <div style="font-size:1rem; color:#22c55e; font-weight:700;">{facts_count}</div><div style="font-size:0.65rem; color:#64748b;">FACTS RECORDED</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.03); padding:8px; border-radius:6px; text-align:center;">
+                <div style="font-size:0.85rem; color:#eab308; font-weight:700; font-family:'Fira Code', monospace !important;">P:{sys_metrics.get("total_prompt_tokens",0)} | C:{sys_metrics.get("total_completion_tokens",0)}</div>
+                <div style="font-size:0.65rem; color:#64748b; margin-top:2px;">ACCUMULATED TOKENS</div>
+            </div>
         </div>
     </div>
     """)
+    if st.button("Boot Nexus Runtime Link 🌐", use_container_width=True):
+        st.session_state.sudah_masuk = True
+        st.rerun()
+    st.stop()
+
+# ==============================================================================
+# 5. RUNTIME ENVIRONMENT MANAGEMENT & OPENROUTER PIPELINE
+# ==============================================================================
+openrouter_key = st.secrets.get("OPENROUTER_API_KEY")
+if not openrouter_key: st.error("Token API Key Missing."); st.stop()
+client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=openrouter_key)
+
+# SIDEBAR CONTROL DECK INTERFACE
+with st.sidebar:
+    st.markdown("<h3 style='color:#38bdf8; font-size:1.1rem;'>🌐 Nexus Control Unit</h3>", unsafe_allow_html=True)
     
-    _, col_btn, _ = st.columns([1, 2, 1])
-    with col_btn:
-        if st.button("Masuk ke Core 🔮", key="enter_cyber_btn", use_container_width=True):
-            st.session_state.sudah_masuk = True
-            st.session_state.splash_time = time.time()
+    st.markdown("<p style='font-size:0.75rem; color:#64748b; font-weight:bold; margin-bottom:2px;'>⚙️ CORE COMPUTE TUNER</p>", unsafe_allow_html=True)
+    selected_model = st.selectbox("Compute Base Engine:", [
+        "google/gemini-2.5-flash",
+        "google/gemini-2.5-pro",
+        "deepseek/deepseek-chat",
+        "meta-llama/llama-3.3-70b-instruct"
+    ], label_visibility="collapsed")
+    
+    core_temperature = st.slider("Flow Variance (Temp):", 0.0, 1.0, 0.3, step=0.1)
+    
+    st.markdown("---")
+    
+    st.markdown("<p style='font-size:0.75rem; color:#64748b; font-weight:bold;'>📂 ACTIVE WORKSPACES</p>", unsafe_allow_html=True)
+    new_title = st.text_input("Forge Target Workspace...", placeholder="Title...", label_visibility="collapsed")
+    if st.button("➕ Inisialisasi Workspace", use_container_width=True):
+        if new_title.strip():
+            n_id = f"session_{int(time.time())}"
+            save_json_file(os.path.join(DIR_ARCHIVE, f"{n_id}.json"), {
+                "title": new_title.strip(), "created": datetime.now().strftime("%Y-%m-%d"),
+                "updated": datetime.now().strftime("%Y-%m-%d"), "messages": []
+            })
+            st.session_state.active_session_id = n_id
             st.rerun()
             
-    st.html("""
-    <div style="text-align:center; margin-top:50px;">
-        <div style="font-size:1.8rem !important; font-weight:800 !important; color:#38bdf8 !important; margin-bottom:20px;">Tentang Kreator</div>
-        <div style="width:140px; height:140px; border-radius:50%; border:2px solid #0284c7; box-shadow:0 0 30px rgba(56,189,248,0.3); margin:0 auto 20px auto; display:flex; justify-content:center; align-items:center; background:rgba(15,23,42,0.6);">
-            <div style="font-size:1rem; font-weight:600; color:#fff; opacity:0.8;">Zayn Profile</div>
-        </div>
-    </div>
-    <div style="max-width:500px; margin:0 auto 60px auto; padding:0 20px; text-align:center;">
-        <p style="font-size:0.95rem; color:#94a3b8; line-height:1.7;">
-            <span style="color:#7dd3fc; font-weight:600;">oXy AI</span> adalah entitas sistem kecerdasan buatan siber mutakhir yang dirancang khusus oleh <span style="color:#7dd3fc; font-weight:600;">Zayn</span> untuk membantu mempercepat alur kerja pengembangan perangkat lunak secara cerdas.
-        </p>
-    </div>
-    """)
-    st.markdown('</div>', unsafe_allow_html=True)
+    search_q = st.text_input("🔍 Filter Workspace Title...", placeholder="Search...", label_visibility="collapsed")
+    archives = []
+    for file_name in os.listdir(DIR_ARCHIVE):
+        if file_name.endswith(".json"):
+            f_id = file_name.replace(".json", "")
+            data_load = load_json_file(os.path.join(DIR_ARCHIVE, file_name), {})
+            if data_load: archives.append({"id": f_id, "title": data_load.get("title", f_id), "updated": data_load.get("updated", "")})
+            
+    if search_q.strip(): archives = [a for a in archives if search_q.lower() in a["title"].lower()]
+    archives.sort(key=lambda x: x["updated"], reverse=True)
+    
+    if not archives:
+        save_json_file(os.path.join(DIR_ARCHIVE, "default_core.json"), {"title": "Main System Workspace", "created": datetime.now().strftime("%Y-%m-%d"), "updated": datetime.now().strftime("%Y-%m-%d"), "messages": []})
+        archives = [{"id": "default_core", "title": "Main System Workspace"}]
 
-# 💬 HALAMAN 2: INTERFACE CHAT CORE UTAMA
-else:
-    if not st.session_state.splash_done:
-        st.markdown('<div class="splash-fade-in">', unsafe_allow_html=True)
-        st.markdown('<div class="cyber-core-container" style="margin-top:15%;"><div class="cyber-planet" style="width:130px; height:130px;"></div></div>', unsafe_allow_html=True)
-        st.markdown('<h1 class="oxy-title" style="font-size:3rem !important;">oXy\'s</h1>', unsafe_allow_html=True)
-        st.markdown('<p class="oxy-sub-title" style="font-size:1.2rem; color:#38bdf8 !important;">AI Assistant</p>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    for item in archives:
+        style_lbl = f"⭐ {item['title']}" if item["id"] == st.session_state.active_session_id else f"📁 {item['title']}"
+        if st.button(style_lbl, key=f"sb_btn_{item['id']}", use_container_width=True):
+            st.session_state.active_session_id = item["id"]
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("<p style='font-size:0.75rem; color:#64748b; font-weight:bold;'>🧠 FLOW DIRECTIVES</p>", unsafe_allow_html=True)
+    flow_mode = st.radio("Logic Directives Switch:", ["Pulse Speed", "Deep Flow", "Forge Engine"], label_visibility="collapsed")
+
+# Mempersiapkan Data Workspace Aktif
+active_file_path = os.path.join(DIR_ARCHIVE, f"{st.session_state.active_session_id}.json")
+active_archive_data = load_json_file(active_file_path, {"title": "Workspace Link", "messages": []})
+
+# Render Antarmuka Visual Atas
+st.markdown(f'<div class="cyber-core-container"><div class="cyber-planet {st.session_state.planet_state}"></div></div>', unsafe_allow_html=True)
+
+proj_intel = longterm_memory["project_intelligence"].get(st.session_state.active_session_id, {"lang": "General", "progress": "0%", "objective": "General Scope Tasks"})
+
+st.html(f"""
+<div style="display:flex; justify-content:center; gap:8px; margin-bottom:10px; font-size:0.75rem;">
+    <div style="background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.2); padding:4px 10px; border-radius:12px; color:#38bdf8;">📂 Core: {active_archive_data.get("title")}</div>
+    <div style="background:rgba(168,85,247,0.1); border:1px solid rgba(168,85,247,0.2); padding:4px 10px; border-radius:12px; color:#c084fc;">🛠️ Intelligence: {proj_intel['lang']} | Progres: {proj_intel['progress']}</div>
+</div>
+""")
+
+# Render Seluruh Riwayat Pesan Workspace
+for msg in active_archive_data.get("messages", []):
+    if msg["role"] == "user":
+        st.html(f'<div style="display:flex; justify-content:flex-end; margin-bottom:12px;"><div class="bubble-user">{msg["content"]}</div></div>')
+    elif msg["role"] == "assistant":
+        with st.container():
+            st.html('<div style="display:flex; justify-content:flex-start;"><div class="bubble-core"><div style="display:flex; align-items:center; gap:5px; margin-bottom:5px;"><div style="width:7px; height:7px; border-radius:50%; background:#38bdf8;"></div><div style="font-weight:700; color:#fff; font-size:0.8rem;">oXy AI</div></div><div style="color:#e2e8f0; line-height:1.6; font-size:0.95rem;">')
+            st.markdown(msg["content"])
+            st.html('</div></div></div>')
+
+# Output Terminal Eksekusi Perintah Bawaan Internal System
+if st.session_state.system_terminal_logs:
+    with st.chat_message("assistant"):
+        st.markdown("**🌐 oXy Built-In Tools System Execution Output**")
+        for log in st.session_state.system_terminal_logs:
+            st.code(log, language="bash")
+    st.session_state.system_terminal_logs = []
+
+# ==============================================================================
+# 6. COMMANDS PROCESSOR MECHANISM
+# ==============================================================================
+def execute_internal_tool_command(user_text):
+    text_cleaned = user_text.strip()
+    if not text_cleaned.startswith("/"): return False
         
-        time.sleep(2.2)
-        st.session_state.splash_done = True
+    parts = text_cleaned.split(" ", 1)
+    cmd = parts[0].lower()
+    args = parts[1] if len(parts) > 1 else ""
+    st.session_state.planet_state = "state-tool"
+    
+    if cmd == "/help":
+        st.session_state.system_terminal_logs = [
+            "oXy Nexus Core OS v5.0 Command Protocol Manifest:",
+            "  /help                Show active system command protocols manifest",
+            "  /calc [expr]         Safe AST isolated mathematical token evaluation",
+            "  /uuid                Forge cryptographic absolute identifier token",
+            "  /facts               Display long-term injected knowledge facts matrix",
+            "  /clear-facts         Wipe all metadata facts inside memory database layer",
+            "  /erase-workspace     Delete active workspace architecture permanently"
+        ]
+    elif cmd == "/calc":
+        if not args:
+            st.session_state.system_terminal_logs = ["Tool Error: Input calculation argument empty."]
+        else:
+            res = safe_eval_expr(args)
+            st.session_state.system_terminal_logs = [f"Input Expression: {args}", f"Safe Numerical Output: {res}"]
+    elif cmd == "/uuid":
+        st.session_state.system_terminal_logs = [f"Cryptographic Identification Token Issued: {uuid.uuid4()}"]
+    elif cmd == "/facts":
+        facts = longterm_memory.get("user_facts", [])
+        st.session_state.system_terminal_logs = ["Retrieving Long-Term Memory Core Fact Arrays:"] + [f" - {f}" for f in facts] if facts else ["Memory Database: No facts recorded."]
+    elif cmd == "/clear-facts":
+        longterm_memory["user_facts"] = []
+        save_json_file(FILE_LONGTERM_MEM, longterm_memory)
+        st.session_state.system_terminal_logs = ["Long-Term Knowledge Fact layers successfully wiped."]
+    elif cmd == "/erase-workspace":
+        if os.path.exists(active_file_path): os.remove(active_file_path)
+        st.session_state.active_session_id = "default_core"
+        st.session_state.system_terminal_logs = ["Target workspace folder unlinked from architecture. Session reset."]
+    else:
+        st.session_state.system_terminal_logs = [f"Protocol Command Error: Unknown directive '{cmd}'. Type /help for assistance."]
+        st.session_state.planet_state = "state-warning"
+        
+    return True
+
+# ==============================================================================
+# 7. LOGIC DISTRIBUTION PIPELINE CONTROL LOOP
+# ==============================================================================
+if user_input := st.chat_input("Transmit logic instruction or enter command (/help)..."):
+    st.html(f'<div style="display:flex; justify-content:flex-end; margin-bottom:12px;"><div class="bubble-user">{user_input}</div></div>')
+    
+    if user_input.strip().startswith("/"):
+        execute_internal_tool_command(user_input)
         st.rerun()
 
-    else:
-        st.markdown('<div class="content-fade-in">', unsafe_allow_html=True)
-        st.markdown('<div class="cyber-core-container" style="margin-top:2%; margin-bottom:15px;"><div class="cyber-planet" style="width:75px; height:75px;"></div></div>', unsafe_allow_html=True)
-        st.markdown('<h1 class="oxy-title" style="font-size: 1.8rem !important;">Selamat datang di oXy\'s</h1>', unsafe_allow_html=True)
-        st.markdown('<p class="oxy-sub-title" style="margin-bottom:15px !important; font-size:0.9rem;">Saya asisten AI yang siap membantu Anda.</p>', unsafe_allow_html=True)
-
-        st.html("""
-        <div class="capsule-menu-container">
-            <div class="capsule-item">🌏 Indonesia</div>
-            <div class="capsule-item">✨ Puisi</div>
-            <div class="capsule-item">🤖 AI (English)</div>
-            <div class="capsule-item">🇪🇸 Español</div>
-        </div>
-        """)
-
-        openrouter_key = st.secrets.get("OPENROUTER_API_KEY")
-        if not openrouter_key:
-            st.error("⚠️ Token OPENROUTER_API_KEY tidak ditemukan di Secrets Streamlit.")
-            st.stop()
-
-        client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=openrouter_key)
-        FILE_ARSIP = "arsip_chat.json"
-
-        if "messages" not in st.session_state:
-            if os.path.exists(FILE_ARSIP):
-                try:
-                    with open(FILE_ARSIP, "r", encoding="utf-8") as f: st.session_state.messages = json.load(f)
-                except: st.session_state.messages = []
-            else: st.session_state.messages = []
-
-        col_reset, _ = st.columns([2, 2])
-        with col_reset:
-            if st.button("🗑️ Kosongkan Sesi oXy", key="cyber_reset"):
-                if os.path.exists(FILE_ARSIP): os.remove(FILE_ARSIP)
-                st.session_state.messages = []
-                st.rerun()
-
-        for msg in st.session_state.messages:
-            if msg["role"] == "user":
-                st.html(f'<div style="display:flex; justify-content:flex-end; margin-bottom:15px;"><div class="cyber-user-bubble">{msg["content"]}</div></div>')
-            elif msg["role"] == "assistant":
-                with st.container():
-                    st.html('<div style="display:flex; justify-content:flex-start;"><div class="cyber-ai-bubble-box"><div class="ai-header-inline"><div class="ai-mini-orb"></div><div style="font-weight:700; color:#fff; font-size:0.9rem;">oXy AI</div></div><div style="color:#e2e8f0; line-height:1.7;">')
-                    st.markdown(msg["content"])
-                    st.html('</div></div></div>')
-
-        if user_input := st.chat_input("Ketik pesan..."):
-            st.html(f'<div style="display:flex; justify-content:flex-end; margin-bottom:15px;"><div class="cyber-user-bubble">{user_input}</div></div>')
-            
-            if len(st.session_state.messages) == 0:
-                st.session_state.messages.append({
-                    "role": "system", 
-                    "content": "Sebagai oXy AI yang dikembangkan oleh Zayn, saya tidak menggunakan API key dari AI lain. Saya beroperasi di infrastruktur yang dikelola oleh tim pengembang saya."
-                })
-                
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            with open(FILE_ARSIP, "w", encoding="utf-8") as f:
-                json.dump(st.session_state.messages, f, ensure_ascii=False, indent=4)
-                
-            try:
-                placeholder_loading = st.empty()
-                with placeholder_loading.container():
-                    st.html("""
-                    <div style="display:flex; justify-content:flex-start;">
-                        <div class="cyber-ai-bubble-box">
-                            <div class="ai-header-inline">
-                                <div class="ai-mini-orb"></div>
-                                <div style="font-weight:700; color:#fff; font-size:0.9rem;">oXy AI berpikir...</div>
-                            </div>
-                            <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
-                        </div>
-                    </div>
-                    """)
-                
-                # MENGGUNAKAN MODEL OTOMATIS/TERJANGKAU SESUAI KODE ASLI TUAN
-                response_stream = client.chat.completions.create(
-                    model="openrouter/auto", 
-                    messages=[m for m in st.session_state.messages if m["role"] != "system"] or st.session_state.messages,
-                    stream=True
-                )
-                placeholder_loading.empty()
-                
-                def generate_stream_data():
-                    for chunk in response_stream:
-                        if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
-                            delta = chunk.choices[0].delta
-                            if hasattr(delta, 'content') and delta.content:
-                                yield delta.content
-
-                with st.container():
-                    st.html('<div style="display:flex; justify-content:flex-start;"><div class="cyber-ai-bubble-box"><div class="ai-header-inline"><div class="ai-mini-orb"></div><div style="font-weight:700; color:#fff; font-size:0.9rem;">oXy AI</div></div><div style="color:#e2e8f0; line-height:1.7;">')
-                    full_response = st.write_stream(generate_stream_data)
-                    st.html('</div></div></div>')
-                
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-                with open(FILE_ARSIP, "w", encoding="utf-8") as f:
-                    json.dump(st.session_state.messages, f, ensure_ascii=False, indent=4)
-                st.rerun()
-                
-            except Exception as e:
-                placeholder_loading.empty()
-                st.error(f"Gagal mengambil respons: {e}")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
+    # Ekstraksi Injeksi Pengetahuan Jangka Panjang
+    extracted_facts_block = "\n".join([f"- {fact}" for fact in longterm_memory.get("user_facts", [])])
+    
+    # MASTER SYSTEM PROMPT ARCHITECTURE (CRITICAL IDENTITY FIX)
+    base_identity = (
+        "OXY CORE ARCHITECTURE PERSONALITY MATRIX v5.0:\n"
+        "Name: oXy\n"
+        "Creator: Zayn\n"
+        "Branding Vocabulary Dictionary: Koneksi=Pulse, Ber

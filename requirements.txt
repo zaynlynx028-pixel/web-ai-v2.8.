@@ -1,0 +1,5 @@
+streamlit
+openai
+pypdf
+docx2txt
+gTTS

@@ -327,16 +327,33 @@ def execute_internal_tool_command(user_text):
 # ==============================================================================
 if user_input := st.chat_input("Transmit logic instruction or enter command (/help)..."):
     st.html(f'<div style="display:flex; justify-content:flex-end; margin-bottom:12px;"><div class="bubble-user">{user_input}</div></div>')
-    
-    if user_input.strip().startswith("/"):
-        execute_internal_tool_command(user_input)
-        st.rerun()
-
-    # Ekstraksi Injeksi Pengetahuan Jangka Panjang
+        # Ekstraksi Injeksi Pengetahuan Jangka Panjang
     extracted_facts_block = "\n".join([f"- {fact}" for fact in longterm_memory.get("user_facts", [])])
     
-    # MASTER SYSTEM PROMPT ARCHITECTURE (FIXED - NO MORE F-STRING BLOCKS TO AVOID SYNTAXERROR)
-    raw_template = """OXY CORE ARCHITECTURE PERSONALITY MATRIX v5.0:
-Name: oXy
-Creator: Zayn
-Branding Vocabulary Dictionary: Koneksi=Pulse, Berpikir=Flow, Me
+    # MASTER SYSTEM PROMPT ARCHITECTURE (LINE-BY-LINE CONCATENATION)
+    # Menghindari triple-quote literal sepenuhnya untuk mencegah SyntaxError
+    lines = [
+        "OXY CORE ARCHITECTURE PERSONALITY MATRIX v5.0:",
+        "Name: oXy",
+        "Creator: Zayn",
+        "Branding Vocabulary Dictionary: Koneksi=Pulse, Berpikir=Flow, Menulis Kode=Forge, Riwayat Chat=Archive, Pusat Data System=Nexus.",
+        "Style Guidelines: Tenang, logis, profesional, fokus penuh pada visualisasi pemecahan masalah.",
+        "",
+        "INJECTED LONG-TERM SYSTEM MEMORY FACTS DATABASE:",
+        "{FACTS_PLACEHOLDER}",
+        "",
+        "CURRENT WORKSPACE PROJ CONTEXT: Stack/Language: {LANG_PLACEHOLDER} | Completion: {MIN_PLACEHOLDER}",
+        "",
+        "AUTONOMOUS OS METADATA PIPELINE MANDATE:",
+        "1. Jika user memberikan fakta baru, lampirkan penanda kaku di baris terbawah dengan skema JSON:",
+        "[MEMORY_UPDATE] {'remember': ['fakta baru']}",
+        "2. Jika deteksi bahasa pemrograman/progres, lampirkan blok JSON:",
+        "[PROJECT_UPDATE] {'lang': 'NamaBahasa', 'progress': 'Persentase%'}"
+    ]
+    
+    raw_template = "\n".join(lines)
+    
+    base_identity = raw_template.replace("{FACTS_PLACEHOLDER}", extracted_facts_block)\
+                                .replace("{LANG_PLACEHOLDER}", str(proj_intel['lang']))\
+                                .replace("{MIN_PLACEHOLDER}", str(proj_intel['progress']))
+

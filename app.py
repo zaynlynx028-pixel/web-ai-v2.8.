@@ -357,3 +357,43 @@ if user_input := st.chat_input("Transmit logic instruction or enter command (/he
                                 .replace("{LANG_PLACEHOLDER}", str(proj_intel['lang']))\
                                 .replace("{MIN_PLACEHOLDER}", str(proj_intel['progress']))
 
+# ==============================================================================
+# 8. NETWORK RESILIENCE STREAMING PIPELINE & PARSING AUTOMATA (DEBUG MODE)
+# ==============================================================================
+if "temp_payload" in st.session_state:
+    payload = st.session_state.pop("temp_payload")
+    sync_lbl = st.session_state.pop("temp_sync_text")
+    
+    try:
+        placeholder_loader = st.empty()
+        with placeholder_loader.container():
+            st.info(f"DEBUG: Connecting to OpenRouter... Payload size: {len(payload)} messages")
+            
+        # Panggilan API
+        response_stream = client.chat.completions.create(
+            model=selected_model,
+            messages=payload,
+            temperature=core_temperature,
+            stream=True
+        )
+        placeholder_loader.empty()
+        
+        # Stream output
+        def generate_stream_data():
+            for chunk in response_stream:
+                if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                    delta = chunk.choices[0].delta
+                    if hasattr(delta, 'content') and delta.content:
+                        yield delta.content
+
+        with st.container():
+            full_response = st.write_stream(generate_stream_data)
+            
+        # ... (sisanya tetap sama: Memory Extractor, Metrics, dll)
+        
+    except Exception as e:
+        st.error(f"RUNTIME ERROR: {str(e)}")
+        st.write("DEBUG: Periksa apakah OPENROUTER_API_KEY sudah terisi dengan benar di Streamlit Secrets.")
+        if "temp_payload" in st.session_state: del st.session_state.temp_payload
+    
+

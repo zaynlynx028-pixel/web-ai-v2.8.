@@ -335,9 +335,8 @@ if user_input := st.chat_input("Transmit logic instruction or enter command (/he
     # Ekstraksi Injeksi Pengetahuan Jangka Panjang
     extracted_facts_block = "\n".join([f"- {fact}" for fact in longterm_memory.get("user_facts", [])])
     
-    # MASTER SYSTEM PROMPT ARCHITECTURE (CRITICAL IDENTITY FIX)
-    base_identity = (
-        "OXY CORE ARCHITECTURE PERSONALITY MATRIX v5.0:\n"
-        "Name: oXy\n"
-        "Creator: Zayn\n"
-        "Branding Vocabulary Dictionary: Koneksi=Pulse, Ber
+    # MASTER SYSTEM PROMPT ARCHITECTURE (FIXED TRIPLE QUOTES ARCHITECTURE)
+    base_identity = f"""OXY CORE ARCHITECTURE PERSONALITY MATRIX v5.0:
+Name: oXy
+Creator: Zayn
+Branding Vocabulary Dictionary: Koneksi=Pulse, Berpikir=Flow, Menulis Kode=Forge, 
